@@ -39,6 +39,10 @@ app.get('/webhook', (req, res) => {
 // ✅ Webhook receiver
 app.post('/webhook', async (req, res) => {
   try {
+
+    console.log("📩 Incoming webhook POST received!");
+    console.log("🪶 Raw body:", JSON.stringify(req.body, null, 2)); 
+
     const entry = req.body.entry?.[0];
     if (!entry?.changes) return res.sendStatus(400);
 
@@ -48,6 +52,9 @@ app.post('/webhook', async (req, res) => {
 
         const finder = msg.from;
         const text = msg.text?.body || '';
+
+        console.log(`📨 Message from ${finder}: ${text}`);
+        
         const tagMatch = text.match(/PetId[:\s]*([A-Z0-9\-]+)/i);
         const petId = tagMatch ? tagMatch[1] : null;
 
