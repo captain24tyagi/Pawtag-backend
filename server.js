@@ -54,7 +54,7 @@ app.post('/webhook', async (req, res) => {
         const text = msg.text?.body || '';
 
         console.log(`📨 Message from ${finder}: ${text}`);
-        
+
         const tagMatch = text.match(/PetId[:\s]*([A-Z0-9\-]+)/i);
         const petId = tagMatch ? tagMatch[1] : null;
 
@@ -82,7 +82,8 @@ app.post('/webhook', async (req, res) => {
         if (isActive) {
           await sendSessionMessage(pet.contactNumber, `(Finder): ${text}\nPet:${pet.petName}`, petId);
         } else {
-          await sendTemplateMessage(pet.contactNumber, 'found_notification', [pet.ownerName || 'Owner',  pet.petName || "Your Pet", 'PickPawz Web'], pet._id);
+          // await sendTemplateMessage(pet.contactNumber, 'found_notification', [pet.ownerName || 'Owner',  pet.petName || "Your Pet", 'PickPawz Web'], pet._id);
+          await sendTemplateMessage(pet.contactNumber, 'hello_world', [], pet._id);
           if (session) {
             session.lastActivityAt = new Date();
             await session.save();
