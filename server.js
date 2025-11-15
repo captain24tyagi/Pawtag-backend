@@ -85,7 +85,7 @@ app.post('/webhook', async (req, res) => {
         });
 
 
-      console.log(`📨 Finder reported tag ${tagId} from ${finder}`);
+      console.log(`📨 Finder reported tag ${petId} from ${finder}`);
 
       const ownerMsg = 
         `Hi ${pet.ownerName},\n` +
