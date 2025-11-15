@@ -58,10 +58,14 @@ app.post('/webhook', async (req, res) => {
         const tagMatch = text.match(/PetId[:\s]*([A-Z0-9\-]+)/i);
         const petId = tagMatch ? tagMatch[1] : null;
 
+        console.log('lll: ', petId)
+
         if (!petId) {
           console.log("⚠️ No petId found in message");
           continue;
         }
+
+        const pet = await Pet.findById(petId);
 
         await FinderReport.create({
           pet: pet._id,
@@ -72,9 +76,6 @@ app.post('/webhook', async (req, res) => {
         });
 
         console.log(`📨 Finder reported tag ${tagId} from ${finder}`);
-
-        if (!petId) continue;
-        const pet = await Pet.findOne({ petId });
 
         const session = await WhatsAppSession.findOne({ pet: pet._id });
         const isActive = session && session.isActive();
