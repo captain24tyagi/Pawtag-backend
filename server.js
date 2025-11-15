@@ -55,7 +55,7 @@ app.post('/webhook', async (req, res) => {
 
         console.log(`📨 Message from ${finder}: ${text}`);
 
-        const tagMatch = text.match(/PetId[:\s]*([A-Z0-9\-]+)/i);
+        const tagMatch = text.match(/PetId[:\s]*([A-Za-z0-9]+)/i);
         const petId = tagMatch ? tagMatch[1] : null;
 
         console.log('lll: ', petId)
@@ -66,16 +66,29 @@ app.post('/webhook', async (req, res) => {
         }
 
         const pet = await Pet.findById(petId);
+        console.log('pet: ', pet)
 
         await FinderReport.create({
           pet: pet._id,
           finder,
           messageText: text,
-          location: message.location || null,
-          media: message.image || null,
         });
 
-        console.log(`📨 Finder reported tag ${tagId} from ${finder}`);
+
+      console.log(`📨 Finder reported tag ${tagId} from ${finder}`);
+
+      const ownerMsg = 
+        `Hi ${pet.ownerName},\n` +
+        `I have found your pet "${pet.petName}" via PickPawz QR Tag.\n\n` +
+        `PetId: ${pet._id}\n\n` +
+        `Please reply to this message to connect securely with the finder.\n` +
+        `For privacy, phone numbers are masked on both sides.`;
+
+      console.log("📤 Sending message to owner:", pet.contactNumber);
+      console.log("📨 Message:\n" + ownerMsg);
+      
+      await sendTemplateMessage(pet.contactNumber, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
+
 
         const session = await WhatsAppSession.findOne({ pet: pet._id });
         const isActive = session && session.isActive();
