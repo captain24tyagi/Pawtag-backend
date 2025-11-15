@@ -82,8 +82,8 @@ app.post('/webhook', async (req, res) => {
         if (isActive) {
           await sendSessionMessage(pet.contactNumber, `(Finder): ${text}\nPet:${pet.petName}`, petId);
         } else {
-          // await sendTemplateMessage(pet.contactNumber, 'found_notification', [pet.ownerName || 'Owner',  pet.petName || "Your Pet", 'PickPawz Web'], pet._id);
-          await sendTemplateMessage(pet.contactNumber, 'hello_world', [], pet._id);
+           await sendTemplateMessage(pet.contactNumber, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
+          //await sendTemplateMessage(pet.contactNumber, 'hello_world', [], pet._id);
           if (session) {
             session.lastActivityAt = new Date();
             await session.save();

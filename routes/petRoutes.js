@@ -3,8 +3,22 @@ import Pet from "../models/Pet.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import { verifyUserToken, verifyAdminToken } from "../middleware/auth.js";
+import crypto from "crypto";
 
 const router = express.Router();
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; 
+const IV_LENGTH = 16;
+
+function encrypt(text) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text, "utf8", "base64");
+  encrypted += cipher.final("base64");
+  return iv.toString("base64") + ":" + encrypted;
+}
+
 
 // configure cloudinary (ensure env vars are set)
 cloudinary.config({
@@ -64,7 +78,7 @@ router.post("/register", upload.single("petImageUrl"), async (req, res) => {
 });
 
 
-router.get("/", async (req, res) => {
+router.get("/", verifyAdminToken,  async (req, res) => {
   try {
     const pets = await Pet.find().sort({ createdAt: -1 }); 
     res.status(200).json(pets);
@@ -75,7 +89,7 @@ router.get("/", async (req, res) => {
 });
 
 
-router.post("/byOwner", async (req, res) => {
+router.post("/byOwner", verifyUserToken, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -97,7 +111,14 @@ router.get("/:petId", async (req, res) => {
   try {
     const pet = await Pet.findById(req.params.petId);
     if (!pet) return res.status(404).json({ error: "Pet not found" });
-    res.status(200).json(pet);
+
+    const encryptedPet = {
+      ...pet._doc,
+      ownerEmail: encrypt(pet.ownerEmail),
+      contactNumber: encrypt(pet.contactNumber),
+    };
+
+    res.status(200).json(encryptedPet);
   } catch (err) {
     console.error("Error fetching pet:", err);
     res.status(500).json({ error: "Server error", details: err.message });
@@ -118,116 +139,3 @@ export default router;
 
 
 
-// import express from "express";
-// import Pet from "../models/Pet.js";
-// import multer from "multer";
-// import { v2 as cloudinary } from "cloudinary";
-// import streamifier from "streamifier";
-// import { CloudinaryStorage } from "multer-storage-cloudinary";
-
-// cloudinary.config({
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-//   api_key: process.env.CLOUDINARY_API_KEY,
-//   api_secret: process.env.CLOUDINARY_API_SECRET,
-// });
-
-
-// // const storage = new CloudinaryStorage({
-// //   cloudinary,
-// //   params: {
-// //     folder: "pickpawz/tags",
-// //     allowed_formats: ["jpg", "jpeg", "png"],
-// //   },
-// // });
-
-// // const upload = multer({ storage });
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage });
-
-// const router = express.Router();
-
-// router.post("/register", upload.single("petImageUrl"), async (req, res) => {
-//   try {
-//     console.log("req.body:", req.body);
-//     console.log("req.file:", req.file);
-
-//     const newPet = new Pet({
-//       petName: req.body.petName,
-//       species: req.body.species,
-//       breed: req.body.breed,
-//       address: req.body.address,
-//       contactNumber: req.body.contactNumber,
-//       ownerEmail: req.body.ownerEmail,
-//       ownerName: req.body.ownerName,
-//       petImageUrl: req.file ? req.file.originalname : null
-//     });
-
-//     const savedPet = await newPet.save();
-//     res.json(savedPet);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-// // router.post("/register", upload.single("petImageUrl"), async (req, res) => {
-// //   try {
-// //     const {
-// //       petName,
-// //       species,
-// //       breed,
-// //       address,
-// //       contactNumber,
-// //       ownerEmail,
-// //       ownerName,
-// //     } = req.body;
-
-// //     const imageUrl = req.file?.path || "";
-
-// //     // const result = await new Promise((resolve, reject) => {
-// //     //   const uploadStream = cloudinary.uploader.upload_stream(
-// //     //     { folder: "pickpawz_tags" },
-// //     //     (error, result) => {
-// //     //       if (result) resolve(result);
-// //     //       else reject(error);
-// //     //     }
-// //     //   );
-// //     //   streamifier.createReadStream(file.buffer).pipe(uploadStream);
-// //     // });
-
-// //     const newPet = new Pet({
-// //       petName,
-// //       species,
-// //       breed,
-// //       address,
-// //       contactNumber,
-// //       ownerEmail,
-// //       ownerName,
-// //       petImageUrl: imageUrl,
-// //     });
-// //     console.log('pet: ', newPet)
-
-// //     const savedPet = await newPet.save();
-
-// //     res.status(201).json({
-// //       message: "Pet registered successfully",
-// //       pet: savedPet,
-// //     });
-// //   } catch (err) {
-// //     console.error(err);
-// //     res.status(500).json({ error: "Failed to register pet" });
-// //   }
-// // });
-
-
-// router.get("/:petId", async (req, res) => {
-//   try {
-//     const pet = await Pet.findById(req.params.petId);
-//     if (!pet) return res.status(404).json({ error: "Pet not found" });
-//     res.json(pet);
-//   } catch (err) {
-//     res.status(500).json({ error: "Server error" });
-//   }
-// });
-
-// export default router;
