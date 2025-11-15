@@ -70,8 +70,18 @@ app.post('/webhook', async (req, res) => {
 
         await FinderReport.create({
           pet: pet._id,
-          finder,
           messageText: text,
+          finderPhone: finder,              
+          messageText: text || null,
+          location: msg.location
+            ? {
+                lat: msg.location.latitude || null,
+                lng: msg.location.longitude || null,
+                address: msg.location.name || null,
+              }
+            : null,
+          media: msg?.image || null, 
+          status: "reported",
         });
 
 
