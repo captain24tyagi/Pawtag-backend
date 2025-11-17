@@ -87,36 +87,28 @@ app.post('/webhook', async (req, res) => {
 
       console.log(`📨 Finder reported tag ${petId} from ${finder}`);
 
-      const ownerMsg = 
-        `Hi ${pet.ownerName},\n` +
-        `I have found your pet "${pet.petName}" via PickPawz QR Tag.\n\n` +
-        `PetId: ${pet._id}\n\n` +
-        `Please reply to this message to connect securely with the finder.\n` +
-        `For privacy, phone numbers are masked on both sides.`;
-
       console.log("📤 Sending message to owner:", pet.contactNumber);
-      console.log("📨 Message:\n" + ownerMsg);
       
       const contactNum = "91" + pet.contactNumber;
 
-      await sendTemplateMessage(contactNum, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
+      //await sendTemplateMessage(contactNum, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
 
 
-        // const session = await WhatsAppSession.findOne({ pet: pet._id });
-        // const isActive = session && session.isActive();
+        const session = await WhatsAppSession.findOne({ pet: pet._id });
+        const isActive = session && session.isActive();
 
-        // if (isActive) {
-        //   await sendSessionMessage(contactNum, `(Finder): ${text}\nPet:${pet.petName}`, petId);
-        // } else {
-        //    await sendTemplateMessage(contactNum, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
-        //   //await sendTemplateMessage(pet.contactNumber, 'hello_world', [], pet._id);
-        //   if (session) {
-        //     session.lastActivityAt = new Date();
-        //     await session.save();
-        //   } else {
-        //     await WhatsAppSession.create({ pet: pet._id });
-        //   }
-        // }
+        if (isActive) {
+          await sendSessionMessage(contactNum, `(Finder): ${text}\nPet:${pet.petName}`, petId);
+        } else {
+           await sendTemplateMessage(contactNum, 'found_notification', [pet.ownerName, pet.petName, pet._id], pet._id);
+          //await sendTemplateMessage(pet.contactNumber, 'hello_world', [], pet._id);
+          if (session) {
+            session.lastActivityAt = new Date();
+            await session.save();
+          } else {
+            await WhatsAppSession.create({ pet: pet._id });
+          }
+        }
       }
 
     res.sendStatus(200);
